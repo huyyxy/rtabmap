@@ -26,50 +26,59 @@ void init_transform(py::module &m) {
         // Static factory methods
         .def_static("getIdentity", &rtabmap::Transform::getIdentity,
                    "Get identity transform")
-        .def_static("fromEigen4d", [](const Eigen::Matrix4d& matrix) {
-            cv::Mat mat(4, 4, CV_64FC1);
-            for(int i = 0; i < 4; ++i) {
-                for(int j = 0; j < 4; ++j) {
-                    mat.at<double>(i, j) = matrix(i, j);
-                }
-            }
-            return rtabmap::Transform(mat);
-        }, "Create Transform from Eigen 4x4 matrix")
+        .def_static("fromEigen4d", &rtabmap::Transform::fromEigen4d, "Create Transform from Eigen 4x4 matrix")
         
         // Access methods
-        .def("x", &rtabmap::Transform::x, "Get x translation")
-        .def("y", &rtabmap::Transform::y, "Get y translation") 
-        .def("z", &rtabmap::Transform::z, "Get z translation")
-        .def("roll", &rtabmap::Transform::roll, "Get roll rotation (radians)")
-        .def("pitch", &rtabmap::Transform::pitch, "Get pitch rotation (radians)")
-        .def("yaw", &rtabmap::Transform::yaw, "Get yaw rotation (radians)")
+        .def("x", [](const rtabmap::Transform& self) -> float {
+            return self.x();
+        }, "Get x translation")
+        .def("y", [](const rtabmap::Transform& self) -> float {
+            return self.y();
+        }, "Get y translation") 
+        .def("z", [](const rtabmap::Transform& self) -> float {
+            return self.z();
+        }, "Get z translation")
+        .def("roll", [](const rtabmap::Transform& self) -> float {
+            float roll, pitch, yaw;
+            self.getEulerAngles(roll, pitch, yaw);
+            return roll;
+        }, "Get roll rotation (radians)")
+        .def("pitch", [](const rtabmap::Transform& self) -> float {
+            float roll, pitch, yaw;
+            self.getEulerAngles(roll, pitch, yaw);
+            return pitch;
+        }, "Get pitch rotation (radians)")
+        .def("yaw", [](const rtabmap::Transform& self) -> float {
+            float roll, pitch, yaw;
+            self.getEulerAngles(roll, pitch, yaw);
+            return yaw;
+        }, "Get yaw rotation (radians)")
         
         // Matrix operations
-        .def("data", [](const rtabmap::Transform& self) -> py::array_t<double> {
-            cv::Mat mat = self.data();
-            if(mat.empty()) {
-                return py::array_t<double>();
+        .def("data", [](const rtabmap::Transform& self) -> py::array_t<float> {
+            const float* data = self.data();
+            if(self.isNull()) {
+                return py::array_t<float>();
             }
-            return py::array_t<double>(
+            // Create a 4x4 matrix from the 3x4 data
+            std::vector<float> matrix_data(16);
+            for(int i = 0; i < 3; ++i) {
+                for(int j = 0; j < 4; ++j) {
+                    matrix_data[i*4 + j] = data[i*4 + j];
+                }
+            }
+            // Add the last row [0, 0, 0, 1]
+            matrix_data[12] = 0.0f; matrix_data[13] = 0.0f; matrix_data[14] = 0.0f; matrix_data[15] = 1.0f;
+            
+            return py::array_t<float>(
                 {4, 4},
-                {sizeof(double) * 4, sizeof(double)},
-                (double*)mat.data
+                {sizeof(float) * 4, sizeof(float)},
+                matrix_data.data()
             );
         }, "Get 4x4 transformation matrix as numpy array")
         
         .def("dataMatrix", [](const rtabmap::Transform& self) -> Eigen::Matrix4d {
-            cv::Mat mat = self.data();
-            Eigen::Matrix4d eigen_mat;
-            if(!mat.empty()) {
-                for(int i = 0; i < 4; ++i) {
-                    for(int j = 0; j < 4; ++j) {
-                        eigen_mat(i, j) = mat.at<double>(i, j);
-                    }
-                }
-            } else {
-                eigen_mat = Eigen::Matrix4d::Identity();
-            }
-            return eigen_mat;
+            return self.toEigen4d();
         }, "Get 4x4 transformation matrix as Eigen matrix")
         
         // Transformation operations
@@ -103,32 +112,15 @@ void init_transform(py::module &m) {
         // Conversion methods
         .def("toEigen3d", [](const rtabmap::Transform& self) -> Eigen::Isometry3d {
             // Convert to Eigen::Isometry3d for compatibility with other libraries
-            cv::Mat mat = self.data();
-            Eigen::Isometry3d iso = Eigen::Isometry3d::Identity();
-            if(!mat.empty()) {
-                for(int i = 0; i < 3; ++i) {
-                    for(int j = 0; j < 3; ++j) {
-                        iso.linear()(i, j) = mat.at<double>(i, j);
-                    }
-                    iso.translation()(i) = mat.at<double>(i, 3);
-                }
-            }
+            Eigen::Affine3d affine = self.toEigen3d();
+            Eigen::Isometry3d iso;
+            iso.linear() = affine.linear();
+            iso.translation() = affine.translation();
             return iso;
         }, "Convert to Eigen::Isometry3d")
         
         .def("toEigen4f", [](const rtabmap::Transform& self) -> Eigen::Matrix4f {
-            cv::Mat mat = self.data();
-            Eigen::Matrix4f eigen_mat;
-            if(!mat.empty()) {
-                for(int i = 0; i < 4; ++i) {
-                    for(int j = 0; j < 4; ++j) {
-                        eigen_mat(i, j) = static_cast<float>(mat.at<double>(i, j));
-                    }
-                }
-            } else {
-                eigen_mat = Eigen::Matrix4f::Identity();
-            }
-            return eigen_mat;
+            return self.toEigen4f();
         }, "Get 4x4 transformation matrix as Eigen Matrix4f")
         
         // Interpolation
