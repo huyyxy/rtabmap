@@ -17,18 +17,20 @@ void init_camera_model(py::module &m) {
     // CameraModel class
     py::class_<rtabmap::CameraModel>(m, "CameraModel")
         .def(py::init<>(), "Default constructor")
-        .def(py::init<const std::string&, const cv::Size&, const cv::Mat&, const cv::Mat&, const cv::Mat&>(),
-             "Construct with calibration parameters",
-             py::arg("name"), py::arg("image_size"), py::arg("K"), py::arg("D"), py::arg("R") = cv::Mat())
-        .def(py::init<double, double, double, double, double, double, double, double>(),
-             "Construct with focal length and principal point",
+        .def(py::init<const std::string&, const cv::Size&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const rtabmap::Transform&>(),
+             "Full constructor with calibration parameters",
+             py::arg("name"), py::arg("image_size"), py::arg("K"), py::arg("D"), py::arg("R"), py::arg("P"),
+             py::arg("local_transform") = rtabmap::CameraModel::opticalRotation())
+        .def(py::init<double, double, double, double, const rtabmap::Transform&, double, const cv::Size&>(),
+             "Minimal constructor with focal length and principal point",
              py::arg("fx"), py::arg("fy"), py::arg("cx"), py::arg("cy"),
-             py::arg("d0") = 0.0, py::arg("d1") = 0.0, py::arg("d2") = 0.0, py::arg("d3") = 0.0)
-        .def(py::init<const std::string&, double, double, double, double, double, double, double, double, const rtabmap::Transform&>(),
-             "Full constructor",
+             py::arg("local_transform") = rtabmap::CameraModel::opticalRotation(),
+             py::arg("Tx") = 0.0, py::arg("image_size") = cv::Size(0,0))
+        .def(py::init<const std::string&, double, double, double, double, const rtabmap::Transform&, double, const cv::Size&>(),
+             "Named minimal constructor",
              py::arg("name"), py::arg("fx"), py::arg("fy"), py::arg("cx"), py::arg("cy"),
-             py::arg("d0") = 0.0, py::arg("d1") = 0.0, py::arg("d2") = 0.0, py::arg("d3") = 0.0,
-             py::arg("local_transform") = rtabmap::Transform::getIdentity())
+             py::arg("local_transform") = rtabmap::CameraModel::opticalRotation(),
+             py::arg("Tx") = 0.0, py::arg("image_size") = cv::Size(0,0))
         
         // Factory methods
         .def_static("fromEigen", [](const Eigen::Matrix3d& K, 
