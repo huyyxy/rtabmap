@@ -148,20 +148,33 @@ void init_camera_model(py::module &m) {
     // StereoCameraModel class
     py::class_<rtabmap::StereoCameraModel>(m, "StereoCameraModel")
         .def(py::init<>(), "Default constructor")
-        .def(py::init<const std::string&, const cv::Size&, const cv::Mat&, const cv::Mat&, const cv::Mat&, 
-                      const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&, 
-                      const rtabmap::Transform&>(),
+        .def(py::init<const std::string&, const cv::Size&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&,
+                      const cv::Size&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&,
+                      const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&, const rtabmap::Transform&>(),
              "Full constructor with stereo calibration",
-             py::arg("name"), py::arg("image_size"), 
-             py::arg("K_left"), py::arg("D_left"), py::arg("K_right"), py::arg("D_right"),
+             py::arg("name"), py::arg("image_size1"), 
+             py::arg("K1"), py::arg("D1"), py::arg("R1"), py::arg("P1"),
+             py::arg("image_size2"), py::arg("K2"), py::arg("D2"), py::arg("R2"), py::arg("P2"),
              py::arg("R"), py::arg("T"), py::arg("E"), py::arg("F"),
-             py::arg("local_transform") = rtabmap::Transform::getIdentity())
-        .def(py::init<double, double, double, double, double, double, double, double, double, double, double, double, const rtabmap::Transform&>(),
+             py::arg("local_transform") = rtabmap::Transform(0,0,1,0, -1,0,0,0, 0,-1,0,0))
+        .def(py::init<double, double, double, double, double, const rtabmap::Transform&, const cv::Size&>(),
              "Simplified constructor",
-             py::arg("fx"), py::arg("fy"), py::arg("cx"), py::arg("cy"),
-             py::arg("baseline"), py::arg("local_transform") = rtabmap::Transform::getIdentity(),
-             py::arg("d0") = 0.0, py::arg("d1") = 0.0, py::arg("d2") = 0.0, py::arg("d3") = 0.0,
-             py::arg("d4") = 0.0, py::arg("d5") = 0.0, py::arg("d6") = 0.0)
+             py::arg("fx"), py::arg("fy"), py::arg("cx"), py::arg("cy"), py::arg("baseline"),
+             py::arg("local_transform") = rtabmap::Transform(0,0,1,0, -1,0,0,0, 0,-1,0,0),
+             py::arg("image_size") = cv::Size(0,0))
+        .def(py::init<const std::string&, double, double, double, double, double, const rtabmap::Transform&, const cv::Size&>(),
+             "Named simplified constructor",
+             py::arg("name"), py::arg("fx"), py::arg("fy"), py::arg("cx"), py::arg("cy"), py::arg("baseline"),
+             py::arg("local_transform") = rtabmap::Transform(0,0,1,0, -1,0,0,0, 0,-1,0,0),
+             py::arg("image_size") = cv::Size(0,0))
+        .def(py::init<const std::string&, const rtabmap::CameraModel&, const rtabmap::CameraModel&, 
+                      const cv::Mat&, const cv::Mat&, const cv::Mat&, const cv::Mat&>(),
+             "Constructor with camera models and stereo matrices",
+             py::arg("name"), py::arg("left_camera"), py::arg("right_camera"),
+             py::arg("R") = cv::Mat(), py::arg("T") = cv::Mat(), py::arg("E") = cv::Mat(), py::arg("F") = cv::Mat())
+        .def(py::init<const std::string&, const rtabmap::CameraModel&, const rtabmap::CameraModel&, const rtabmap::Transform&>(),
+             "Constructor with camera models and extrinsics transform",
+             py::arg("name"), py::arg("left_camera"), py::arg("right_camera"), py::arg("extrinsics"))
         
         // Accessors
         .def("left", &rtabmap::StereoCameraModel::left,

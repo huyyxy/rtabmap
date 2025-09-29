@@ -33,21 +33,34 @@ def find_rtabmap_paths():
     library_dirs = []
     libraries = []
     
-    # Check if we're in the RTAB-Map source tree
-    if (rtabmap_root / "corelib" / "include" / "rtabmap").exists():
-        print("Found RTAB-Map source tree")
-        include_dirs.append(str(rtabmap_root / "corelib" / "include"))
-        include_dirs.append(str(rtabmap_root / "utilite" / "include"))
-        
-        # Look for build directory
-        build_dir = rtabmap_root / "build"
-        if build_dir.exists():
-            library_dirs.append(str(build_dir / "bin"))
-            # Common RTAB-Map libraries
-            libraries.extend(['rtabmap_core', 'rtabmap_utilite'])
+    # Allow forcing system installation via environment variable
+    force_system = os.environ.get('RTABMAP_FORCE_SYSTEM', '').lower() in ('1', 'true', 'yes')
+    
+    # Check if we're in the RTAB-Map source tree and if it has the required export headers
+    source_tree_valid = False
+    if not force_system and (rtabmap_root / "corelib" / "include" / "rtabmap").exists():
+        # Check if the source tree has the required export header
+        export_header = rtabmap_root / "corelib" / "include" / "rtabmap" / "core" / "rtabmap_core_export.h"
+        if export_header.exists():
+            print("Found RTAB-Map source tree with export headers")
+            include_dirs.append(str(rtabmap_root / "corelib" / "include"))
+            include_dirs.append(str(rtabmap_root / "utilite" / "include"))
+            source_tree_valid = True
+            
+            # Look for build directory
+            build_dir = rtabmap_root / "build"
+            if build_dir.exists():
+                library_dirs.append(str(build_dir / "bin"))
+                # Common RTAB-Map libraries
+                libraries.extend(['rtabmap_core', 'rtabmap_utilite'])
+            else:
+                print("Warning: RTAB-Map build directory not found. Please build RTAB-Map first.")
         else:
-            print("Warning: RTAB-Map build directory not found. Please build RTAB-Map first.")
-    else:
+            print("Found RTAB-Map source tree but missing export headers, falling back to system installation")
+    elif force_system:
+        print("Forcing system RTAB-Map installation (RTABMAP_FORCE_SYSTEM=1)")
+    
+    if not source_tree_valid:
         # Try to find system-installed RTAB-Map
         print("Looking for system-installed RTAB-Map...")
         try:
