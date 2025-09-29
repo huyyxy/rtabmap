@@ -70,6 +70,8 @@ def find_rtabmap_paths():
         # Fallback to common installation paths
         if not include_dirs:
             common_include_paths = [
+                '/usr/local/include/rtabmap-0.23',  # Versioned RTAB-Map installation
+                '/usr/local/include/rtabmap-*',     # Other versioned installations
                 '/usr/local/include',
                 '/usr/include',
                 '/opt/ros/*/include',  # ROS installation
@@ -83,15 +85,23 @@ def find_rtabmap_paths():
                             include_dirs.append(path)
                             break
                 else:
-                    if (Path(path_pattern) / 'rtabmap').exists():
-                        include_dirs.append(path_pattern)
-                        break
+                    # For versioned paths like /usr/local/include/rtabmap-0.23, check if path exists
+                    # and contains rtabmap headers
+                    if Path(path_pattern).exists():
+                        if (Path(path_pattern) / 'rtabmap').exists():
+                            include_dirs.append(path_pattern)
+                            break
+                        elif 'rtabmap-' in path_pattern and (Path(path_pattern) / 'rtabmap' / 'core').exists():
+                            include_dirs.append(path_pattern)
+                            break
         
         if not library_dirs:
             common_lib_paths = [
                 '/usr/local/lib',
                 '/usr/lib',
                 '/usr/lib/x86_64-linux-gnu',  # Ubuntu
+                '/usr/lib/rtabmap-0.23',       # Versioned RTAB-Map libraries
+                '/usr/local/lib/rtabmap-0.23', # Versioned RTAB-Map libraries
                 '/opt/ros/*/lib',  # ROS installation
             ]
             for path_pattern in common_lib_paths:
