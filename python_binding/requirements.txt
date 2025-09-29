@@ -1,0 +1,19 @@
+# Core dependencies
+numpy>=1.19.0
+opencv-python>=4.5.0
+pybind11>=2.6.0
+
+# Build dependencies
+setuptools>=45.0
+wheel
+cmake>=3.14
+
+# Optional dependencies for examples
+matplotlib>=3.3.0
+
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=6.0
+# pytest-cov
+# black
+# flake8
+# mypy
