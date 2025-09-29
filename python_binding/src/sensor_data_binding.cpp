@@ -28,11 +28,11 @@ py::array_t<uint8_t> mat_to_numpy(const cv::Mat& mat) {
     
     if (mat.channels() == 1) {
         shape = {mat.rows, mat.cols};
-        strides = {sizeof(uint8_t) * mat.cols, sizeof(uint8_t)};
+        strides = {static_cast<ssize_t>(sizeof(uint8_t) * mat.cols), static_cast<ssize_t>(sizeof(uint8_t))};
     } else {
         shape = {mat.rows, mat.cols, mat.channels()};
-        strides = {sizeof(uint8_t) * mat.cols * mat.channels(), 
-                   sizeof(uint8_t) * mat.channels(), sizeof(uint8_t)};
+        strides = {static_cast<ssize_t>(sizeof(uint8_t) * mat.cols * mat.channels()), 
+                   static_cast<ssize_t>(sizeof(uint8_t) * mat.channels()), static_cast<ssize_t>(sizeof(uint8_t))};
     }
     
     return py::array_t<uint8_t>(shape, strides, mat.data);
@@ -104,15 +104,15 @@ void init_sensor_data(py::module &m) {
             }
             return py::array_t<uint16_t>(
                 {depth.rows, depth.cols},
-                {sizeof(uint16_t) * depth.cols, sizeof(uint16_t)},
+                {static_cast<ssize_t>(sizeof(uint16_t) * depth.cols), static_cast<ssize_t>(sizeof(uint16_t))},
                 (uint16_t*)depth.data
             );
         }, "Get raw depth image as numpy array")
         
         .def("imageCompressed", &rtabmap::SensorData::imageCompressed, 
              "Get compressed RGB image data")
-        .def("depthCompressed", &rtabmap::SensorData::depthCompressed,
-             "Get compressed depth image data")
+        .def("depthOrRightCompressed", &rtabmap::SensorData::depthOrRightCompressed,
+             "Get compressed depth or right image data")
         
         // Camera models
         .def("cameraModels", &rtabmap::SensorData::cameraModels,
@@ -165,7 +165,7 @@ void init_sensor_data(py::module &m) {
         }, "Check if has IMU data")
         
         .def("hasGPS", [](const rtabmap::SensorData& self) -> bool {
-            return !self.gps().stamp() == 0.0;
+            return self.gps().stamp() != 0.0;
         }, "Check if has GPS data")
         
         // Data modification methods
@@ -187,7 +187,7 @@ void init_sensor_data(py::module &m) {
         }, "Set RGB-D image data from numpy arrays")
         
         .def("setLaserScan", &rtabmap::SensorData::setLaserScan,
-             "Set laser scan data", py::arg("laser_scan"))
+             "Set laser scan data", py::arg("laser_scan"), py::arg("clear_previous_data") = true)
         
         .def("setIMU", &rtabmap::SensorData::setIMU,
              "Set IMU data", py::arg("imu"))
@@ -201,8 +201,6 @@ void init_sensor_data(py::module &m) {
         // Compression methods
         .def("uncompressData", py::overload_cast<>(&rtabmap::SensorData::uncompressData),
              "Uncompress all data")
-        .def("uncompressData", py::overload_cast<cv::Mat*, cv::Mat*>(&rtabmap::SensorData::uncompressData),
-             "Uncompress image and depth data", py::arg("rgb"), py::arg("depth"))
         
         // Clone method
         .def("clone", [](const rtabmap::SensorData& self) {

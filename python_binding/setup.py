@@ -39,22 +39,29 @@ def find_rtabmap_paths():
     # Check if we're in the RTAB-Map source tree and if it has the required export headers
     source_tree_valid = False
     if not force_system and (rtabmap_root / "corelib" / "include" / "rtabmap").exists():
-        # Check if the source tree has the required export header
-        export_header = rtabmap_root / "corelib" / "include" / "rtabmap" / "core" / "rtabmap_core_export.h"
-        if export_header.exists():
+        # Check if the source tree has the required export header (in source or build directory)
+        export_header_source = rtabmap_root / "corelib" / "include" / "rtabmap" / "core" / "rtabmap_core_export.h"
+        export_header_build = rtabmap_root / "build" / "corelib" / "src" / "include" / "rtabmap" / "core" / "rtabmap_core_export.h"
+        
+        if export_header_source.exists() or export_header_build.exists():
             print("Found RTAB-Map source tree with export headers")
             include_dirs.append(str(rtabmap_root / "corelib" / "include"))
             include_dirs.append(str(rtabmap_root / "utilite" / "include"))
-            source_tree_valid = True
             
-            # Look for build directory
+            # Also add build directory include paths if they exist
             build_dir = rtabmap_root / "build"
             if build_dir.exists():
+                build_include = build_dir / "corelib" / "src" / "include"
+                if build_include.exists():
+                    include_dirs.append(str(build_include))
+                utilite_build_include = build_dir / "utilite" / "src" / "include"
+                if utilite_build_include.exists():
+                    include_dirs.append(str(utilite_build_include))
                 library_dirs.append(str(build_dir / "bin"))
                 # Common RTAB-Map libraries
                 libraries.extend(['rtabmap_core', 'rtabmap_utilite'])
-            else:
-                print("Warning: RTAB-Map build directory not found. Please build RTAB-Map first.")
+            
+            source_tree_valid = True
         else:
             print("Found RTAB-Map source tree but missing export headers, falling back to system installation")
     elif force_system:
@@ -232,11 +239,11 @@ def find_pcl_paths():
     
     try:
         # Use pkg-config for PCL
-        result = subprocess.run(['pkg-config', '--cflags', '--libs', 'pcl_common-1.14'], 
+        result = subprocess.run(['pkg-config', '--cflags', '--libs', 'pcl_common-1.15'], 
                               capture_output=True, text=True)
         if result.returncode != 0:
             # Try different PCL versions
-            for version in ['1.13', '1.12', '1.11', '1.10']:
+            for version in ['1.14', '1.13', '1.12', '1.11', '1.10']:
                 result = subprocess.run(['pkg-config', '--cflags', '--libs', f'pcl_common-{version}'], 
                                       capture_output=True, text=True)
                 if result.returncode == 0:
@@ -257,6 +264,8 @@ def find_pcl_paths():
     # Fallback detection
     if not include_dirs:
         common_pcl_paths = [
+            '/usr/local/include/pcl-1.15',
+            '/usr/include/pcl-1.15', 
             '/usr/local/include/pcl-1.14',
             '/usr/include/pcl-1.14', 
             '/usr/local/include/pcl-1.13',
@@ -268,6 +277,7 @@ def find_pcl_paths():
             '/usr/local/include/pcl-1.10',
             '/usr/include/pcl-1.10',
             '/opt/homebrew/include/pcl-*',  # macOS Homebrew
+            '/usr/local/Cellar/pcl/*/include/pcl-*',  # macOS Homebrew with version
         ]
         for path_pattern in common_pcl_paths:
             if '*' in path_pattern:
@@ -303,14 +313,44 @@ def find_pcl_paths():
     
     return include_dirs, library_dirs, libraries
 
+def find_boost_paths():
+    """Find Boost installation paths."""
+    include_dirs = []
+    
+    # Common Boost paths
+    common_boost_paths = [
+        '/usr/local/include',  # System installation
+        '/usr/include',
+        '/opt/homebrew/include',  # macOS Homebrew (Apple Silicon)
+        '/usr/local/Cellar/boost/*/include',  # macOS Homebrew (Intel)
+    ]
+    
+    for path_pattern in common_boost_paths:
+        if '*' in path_pattern:
+            # Handle glob patterns
+            import glob
+            for path in glob.glob(path_pattern):
+                if Path(path).exists() and (Path(path) / 'boost').exists():
+                    include_dirs.append(path)
+                    break
+            if include_dirs:
+                break
+        else:
+            if Path(path_pattern).exists() and (Path(path_pattern) / 'boost').exists():
+                include_dirs.append(path_pattern)
+                break
+    
+    return include_dirs
+
 # Get paths
 rtabmap_includes, rtabmap_lib_dirs, rtabmap_libs = find_rtabmap_paths()
 opencv_includes, opencv_lib_dirs, opencv_libs = find_opencv_paths()
 eigen_includes = find_eigen_paths()
 pcl_includes, pcl_lib_dirs, pcl_libs = find_pcl_paths()
+boost_includes = find_boost_paths()
 
 # Combine all paths
-all_include_dirs = rtabmap_includes + opencv_includes + eigen_includes + pcl_includes
+all_include_dirs = rtabmap_includes + opencv_includes + eigen_includes + pcl_includes + boost_includes
 all_library_dirs = rtabmap_lib_dirs + opencv_lib_dirs + pcl_lib_dirs
 all_libraries = rtabmap_libs + opencv_libs + pcl_libs
 
@@ -318,6 +358,7 @@ print(f"RTAB-Map includes: {rtabmap_includes}")
 print(f"OpenCV includes: {opencv_includes}")
 print(f"Eigen includes: {eigen_includes}")
 print(f"PCL includes: {pcl_includes}")
+print(f"Boost includes: {boost_includes}")
 print(f"All include directories: {all_include_dirs}")
 print(f"Library directories: {all_library_dirs}")
 print(f"Libraries: {all_libraries}")
@@ -334,7 +375,7 @@ source_files = [
 ]
 
 # Compiler flags
-cxx_std = 14
+cxx_std = 17
 compile_args = []
 link_args = []
 

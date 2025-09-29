@@ -29,20 +29,20 @@ void init_statistics(py::module &m) {
         .def("constraints", &rtabmap::Statistics::constraints,
              "Get constraints/links",
              py::return_value_policy::reference_internal)
-        .def("mapCorrections", &rtabmap::Statistics::mapCorrections,
-             "Get map corrections",
+        .def("mapCorrection", &rtabmap::Statistics::mapCorrection,
+             "Get map correction transform",
              py::return_value_policy::reference_internal)
         .def("labels", &rtabmap::Statistics::labels,
              "Get node labels",
              py::return_value_policy::reference_internal)
-        .def("posteriorKeys", &rtabmap::Statistics::posteriorKeys,
-             "Get posterior keys",
+        .def("posterior", &rtabmap::Statistics::posterior,
+             "Get posterior values",
              py::return_value_policy::reference_internal)
-        .def("likelihoodKeys", &rtabmap::Statistics::likelihoodKeys,
-             "Get likelihood keys", 
+        .def("likelihood", &rtabmap::Statistics::likelihood,
+             "Get likelihood values", 
              py::return_value_policy::reference_internal)
-        .def("rawLikelihoodKeys", &rtabmap::Statistics::rawLikelihoodKeys,
-             "Get raw likelihood keys",
+        .def("rawLikelihood", &rtabmap::Statistics::rawLikelihood,
+             "Get raw likelihood values",
              py::return_value_policy::reference_internal)
         .def("weights", &rtabmap::Statistics::weights,
              "Get node weights",
@@ -52,12 +52,6 @@ void init_statistics(py::module &m) {
              py::return_value_policy::reference_internal)
         .def("currentGoalId", &rtabmap::Statistics::currentGoalId,
              "Get current goal ID")
-        .def("odomPose", &rtabmap::Statistics::odomPose,
-             "Get odometry pose",
-             py::return_value_policy::reference_internal)
-        .def("mapCorrection", &rtabmap::Statistics::mapCorrection,
-             "Get map correction transform",
-             py::return_value_policy::reference_internal)
         .def("loopClosureId", &rtabmap::Statistics::loopClosureId,
              "Get loop closure ID")
         .def("proximityDetectionId", &rtabmap::Statistics::proximityDetectionId,

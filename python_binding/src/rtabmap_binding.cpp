@@ -12,6 +12,7 @@
 #include <rtabmap/core/Statistics.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/DBDriver.h>
+#include <rtabmap/core/Memory.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;
@@ -145,11 +146,7 @@ void init_rtabmap(py::module &m) {
         // Advanced operations
         .def("generateDOTGraph", &rtabmap::Rtabmap::generateDOTGraph,
              "Generate DOT graph for visualization",
-             py::arg("output_path"), py::arg("poses_id") = std::set<int>(), py::arg("neighbor_link_maps") = std::map<int, int>(),
-             py::arg("global_loop_closure_maps") = std::map<int, int>(), py::arg("local_loop_closure_maps") = std::map<int, int>(),
-             py::arg("user_link_maps") = std::map<int, int>(), py::arg("virtual_link_maps") = std::map<int, int>(),
-             py::arg("neighbor_merged_maps") = std::map<int, int>(), py::arg("landmark_maps") = std::map<int, int>(),
-             py::arg("inter_session_maps") = std::map<int, int>())
+             py::arg("path"), py::arg("id") = 0, py::arg("margin") = 5)
         
         .def("getNodesInRadius", [](rtabmap::Rtabmap& self, const rtabmap::Transform& pose, float radius, int k = 0) {
             return self.getNodesInRadius(pose, radius, k, nullptr);
@@ -203,6 +200,31 @@ void init_rtabmap(py::module &m) {
             return self.getMemory() ? "Rtabmap(initialized)" : "Rtabmap(not initialized)";
         });
     
+    // Add Memory class binding (minimal interface)
+    py::class_<rtabmap::Memory>(m, "Memory")
+        .def("getParameters", &rtabmap::Memory::getParameters,
+             "Get memory parameters",
+             py::return_value_policy::reference_internal)
+        .def("getWorkingMem", &rtabmap::Memory::getWorkingMem,
+             "Get working memory",
+             py::return_value_policy::reference_internal)
+        .def("getStMem", &rtabmap::Memory::getStMem,
+             "Get short-term memory",
+             py::return_value_policy::reference_internal)
+        .def("getMaxStMemSize", &rtabmap::Memory::getMaxStMemSize,
+             "Get maximum short-term memory size")
+        .def("getLastSignatureId", &rtabmap::Memory::getLastSignatureId,
+             "Get last signature ID")
+        .def("getDatabaseMemoryUsed", &rtabmap::Memory::getDatabaseMemoryUsed,
+             "Get database memory usage in bytes")
+        .def("getDatabaseUrl", &rtabmap::Memory::getDatabaseUrl,
+             "Get database URL")
+        .def("getAllLabels", &rtabmap::Memory::getAllLabels,
+             "Get all node labels",
+             py::return_value_policy::reference_internal)
+        .def("allNodesInWM", &rtabmap::Memory::allNodesInWM,
+             "Check if all nodes are in working memory");
+
     // Add VhStrategy enum
     py::enum_<rtabmap::Rtabmap::VhStrategy>(m, "VhStrategy", "Visual hypothesis strategy")
         .value("kVhNone", rtabmap::Rtabmap::kVhNone, "No visual hypothesis")
