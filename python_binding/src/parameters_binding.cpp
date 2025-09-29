@@ -4,6 +4,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 #include <pybind11/cast.h>
 
 #include <rtabmap/core/Parameters.h>
@@ -115,59 +116,6 @@ void init_parameters(py::module &m) {
     param.attr("kKpSubPixIterations") = rtabmap::Parameters::kKpSubPixIterations();
     param.attr("kKpSubPixEps") = rtabmap::Parameters::kKpSubPixEps();
     
-    // Helper class for easier parameter management
-    py::class_<rtabmap::ParametersMap>(m, "ParametersMap")
-        .def(py::init<>())
-        .def(py::init<const std::map<std::string, std::string>&>())
-        .def("insert", [](rtabmap::ParametersMap& self, const std::string& key, const std::string& value) {
-            self.insert(std::make_pair(key, value));
-        }, "Insert a parameter")
-        .def("find", [](const rtabmap::ParametersMap& self, const std::string& key) -> py::object {
-            auto it = self.find(key);
-            if (it != self.end()) {
-                return py::cast(it->second);
-            }
-            return py::none();
-        }, "Find a parameter value")
-        .def("__getitem__", [](const rtabmap::ParametersMap& self, const std::string& key) {
-            auto it = self.find(key);
-            if (it != self.end()) {
-                return it->second;
-            }
-            throw py::key_error("Parameter not found: " + key);
-        })
-        .def("__setitem__", [](rtabmap::ParametersMap& self, const std::string& key, const std::string& value) {
-            self[key] = value;
-        })
-        .def("__contains__", [](const rtabmap::ParametersMap& self, const std::string& key) {
-            return self.find(key) != self.end();
-        })
-        .def("keys", [](const rtabmap::ParametersMap& self) {
-            std::vector<std::string> keys;
-            for (const auto& pair : self) {
-                keys.push_back(pair.first);
-            }
-            return keys;
-        })
-        .def("values", [](const rtabmap::ParametersMap& self) {
-            std::vector<std::string> values;
-            for (const auto& pair : self) {
-                values.push_back(pair.second);
-            }
-            return values;
-        })
-        .def("items", [](const rtabmap::ParametersMap& self) {
-            std::vector<std::pair<std::string, std::string>> items;
-            for (const auto& pair : self) {
-                items.push_back(pair);
-            }
-            return items;
-        })
-        .def("size", &rtabmap::ParametersMap::size)
-        .def("empty", &rtabmap::ParametersMap::empty)
-        .def("clear", &rtabmap::ParametersMap::clear)
-        .def("__len__", &rtabmap::ParametersMap::size)
-        .def("__iter__", [](const rtabmap::ParametersMap& self) {
-            return py::make_iterator(self.begin(), self.end());
-        }, py::keep_alive<0, 1>());
+    // Use pybind11's built-in STL support for std::map
+    py::bind_map<rtabmap::ParametersMap>(m, "ParametersMap");
 }

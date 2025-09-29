@@ -176,7 +176,7 @@ void init_rtabmap(py::module &m) {
             return self.getMemory() != nullptr;
         }, "Check if RTAB-Map is initialized")
         
-        .def("getVersion", []() -> std::string {
+        .def("getVersion", [](const rtabmap::Rtabmap& self) -> std::string {
             return "0.23.1"; // RTAB-Map version
         }, "Get RTAB-Map version")
         
