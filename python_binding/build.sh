@@ -173,7 +173,7 @@ build_cmake() {
 install_package() {
     print_status "Installing Python package..."
     
-    pip3 install -e .
+    pip3 install -e . --break-system-packages
     
     print_status "Package installed successfully!"
 }
