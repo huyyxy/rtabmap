@@ -224,19 +224,100 @@ def find_eigen_paths():
     
     return include_dirs
 
+def find_pcl_paths():
+    """Find PCL (Point Cloud Library) installation paths."""
+    include_dirs = []
+    library_dirs = []
+    libraries = []
+    
+    try:
+        # Use pkg-config for PCL
+        result = subprocess.run(['pkg-config', '--cflags', '--libs', 'pcl_common-1.14'], 
+                              capture_output=True, text=True)
+        if result.returncode != 0:
+            # Try different PCL versions
+            for version in ['1.13', '1.12', '1.11', '1.10']:
+                result = subprocess.run(['pkg-config', '--cflags', '--libs', f'pcl_common-{version}'], 
+                                      capture_output=True, text=True)
+                if result.returncode == 0:
+                    break
+        
+        if result.returncode == 0:
+            flags = result.stdout.split()
+            for flag in flags:
+                if flag.startswith('-I'):
+                    include_dirs.append(flag[2:])
+                elif flag.startswith('-L'):
+                    library_dirs.append(flag[2:])
+                elif flag.startswith('-l') and flag.startswith('-lpcl'):
+                    libraries.append(flag[2:])
+    except FileNotFoundError:
+        print("pkg-config not found, using fallback PCL detection")
+    
+    # Fallback detection
+    if not include_dirs:
+        common_pcl_paths = [
+            '/usr/local/include/pcl-1.14',
+            '/usr/include/pcl-1.14', 
+            '/usr/local/include/pcl-1.13',
+            '/usr/include/pcl-1.13',
+            '/usr/local/include/pcl-1.12',
+            '/usr/include/pcl-1.12',
+            '/usr/local/include/pcl-1.11',
+            '/usr/include/pcl-1.11',
+            '/usr/local/include/pcl-1.10',
+            '/usr/include/pcl-1.10',
+            '/opt/homebrew/include/pcl-*',  # macOS Homebrew
+        ]
+        for path_pattern in common_pcl_paths:
+            if '*' in path_pattern:
+                # Handle glob patterns
+                import glob
+                for path in glob.glob(path_pattern):
+                    if Path(path).exists() and (Path(path) / 'pcl' / 'pcl_config.h').exists():
+                        include_dirs.append(path)
+                        break
+                if include_dirs:
+                    break
+            else:
+                if Path(path_pattern).exists() and (Path(path_pattern) / 'pcl' / 'pcl_config.h').exists():
+                    include_dirs.append(path_pattern)
+                    break
+    
+    if not library_dirs:
+        common_lib_paths = [
+            '/usr/local/lib',
+            '/usr/lib',
+            '/usr/lib/x86_64-linux-gnu',  # Ubuntu
+            '/opt/homebrew/lib',  # macOS Homebrew
+        ]
+        for path in common_lib_paths:
+            if Path(path).exists():
+                library_dirs.append(path)
+                break
+    
+    if not libraries:
+        # Common PCL libraries needed by RTAB-Map
+        libraries.extend(['pcl_common', 'pcl_io', 'pcl_filters', 'pcl_features', 
+                         'pcl_registration', 'pcl_surface', 'pcl_segmentation'])
+    
+    return include_dirs, library_dirs, libraries
+
 # Get paths
 rtabmap_includes, rtabmap_lib_dirs, rtabmap_libs = find_rtabmap_paths()
 opencv_includes, opencv_lib_dirs, opencv_libs = find_opencv_paths()
 eigen_includes = find_eigen_paths()
+pcl_includes, pcl_lib_dirs, pcl_libs = find_pcl_paths()
 
 # Combine all paths
-all_include_dirs = rtabmap_includes + opencv_includes + eigen_includes
-all_library_dirs = rtabmap_lib_dirs + opencv_lib_dirs
-all_libraries = rtabmap_libs + opencv_libs
+all_include_dirs = rtabmap_includes + opencv_includes + eigen_includes + pcl_includes
+all_library_dirs = rtabmap_lib_dirs + opencv_lib_dirs + pcl_lib_dirs
+all_libraries = rtabmap_libs + opencv_libs + pcl_libs
 
 print(f"RTAB-Map includes: {rtabmap_includes}")
 print(f"OpenCV includes: {opencv_includes}")
 print(f"Eigen includes: {eigen_includes}")
+print(f"PCL includes: {pcl_includes}")
 print(f"All include directories: {all_include_dirs}")
 print(f"Library directories: {all_library_dirs}")
 print(f"Libraries: {all_libraries}")
