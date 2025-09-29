@@ -50,7 +50,12 @@ void init_camera_model(py::module &m) {
                 D_mat.at<double>(0, i) = D(i);
             }
             
-            return rtabmap::CameraModel(name, image_size, K_mat, D_mat);
+            // Create identity matrices for R and P
+            cv::Mat R_mat = cv::Mat::eye(3, 3, CV_64FC1);
+            cv::Mat P_mat = cv::Mat::eye(3, 4, CV_64FC1);
+            K_mat.copyTo(P_mat.colRange(0, 3));
+            
+            return rtabmap::CameraModel(name, image_size, K_mat, D_mat, R_mat, P_mat);
         }, "Create CameraModel from Eigen matrices",
            py::arg("K"), py::arg("D"), py::arg("image_size"), py::arg("name") = "")
         
@@ -92,34 +97,37 @@ void init_camera_model(py::module &m) {
              "Get local transform", py::return_value_policy::reference_internal)
         
         // Utility methods
-        .def("isValid", &rtabmap::CameraModel::isValid, "Check if camera model is valid")
         .def("isValidForProjection", &rtabmap::CameraModel::isValidForProjection,
              "Check if valid for projection operations")
-        .def("isRectificationNeeded", &rtabmap::CameraModel::isRectificationNeeded,
+        .def("isValidForReprojection", &rtabmap::CameraModel::isValidForReprojection,
+             "Check if valid for reprojection operations")
+        .def("isValidForRectification", &rtabmap::CameraModel::isValidForRectification,
              "Check if rectification is needed")
         
         // Projection methods
-        .def("project", [](const rtabmap::CameraModel& self, const std::vector<cv::Point3f>& points_3d) {
-            std::vector<cv::Point2f> points_2d;
-            self.project(points_3d, points_2d);
-            return points_2d;
-        }, "Project 3D points to 2D image coordinates", py::arg("points_3d"))
+        .def("project", [](const rtabmap::CameraModel& self, float u, float v, float depth) {
+            float x, y, z;
+            self.project(u, v, depth, x, y, z);
+            return py::make_tuple(x, y, z);
+        }, "Project 2D pixel to 3D point", py::arg("u"), py::arg("v"), py::arg("depth"))
         
-        .def("reproject", [](const rtabmap::CameraModel& self, 
-                            const std::vector<cv::Point2f>& points_2d,
-                            const std::vector<float>& depths) {
-            std::vector<cv::Point3f> points_3d;
-            self.reproject(points_2d, depths, points_3d);
-            return points_3d;
-        }, "Reproject 2D points to 3D using depths", 
-           py::arg("points_2d"), py::arg("depths"))
+        .def("reproject", [](const rtabmap::CameraModel& self, float x, float y, float z) {
+            float u, v;
+            self.reproject(x, y, z, u, v);
+            return py::make_tuple(u, v);
+        }, "Reproject 3D point to 2D pixel", py::arg("x"), py::arg("y"), py::arg("z"))
+        
+        .def("reprojectToInt", [](const rtabmap::CameraModel& self, float x, float y, float z) {
+            int u, v;
+            self.reproject(x, y, z, u, v);
+            return py::make_tuple(u, v);
+        }, "Reproject 3D point to 2D pixel (integer coordinates)", py::arg("x"), py::arg("y"), py::arg("z"))
         
         // Image rectification
-        .def("rectifyImage", [](const rtabmap::CameraModel& self, const cv::Mat& raw_image) {
-            cv::Mat rectified;
-            self.rectifyImage(raw_image, rectified);
-            return rectified;
-        }, "Rectify image using calibration parameters", py::arg("raw_image"))
+        .def("rectifyImage", [](const rtabmap::CameraModel& self, const cv::Mat& raw_image, int interpolation) {
+            return self.rectifyImage(raw_image, interpolation);
+        }, "Rectify image using calibration parameters", 
+           py::arg("raw_image"), py::arg("interpolation") = cv::INTER_LINEAR)
         
         // Scaling
         .def("scaled", &rtabmap::CameraModel::scaled,
@@ -206,9 +214,10 @@ void init_camera_model(py::module &m) {
         }, "Get translation vector between cameras")
         
         // Utility methods
-        .def("isValid", &rtabmap::StereoCameraModel::isValid, "Check if stereo model is valid")
         .def("isValidForProjection", &rtabmap::StereoCameraModel::isValidForProjection,
              "Check if valid for projection")
+        .def("isValidForRectification", &rtabmap::StereoCameraModel::isValidForRectification,
+             "Check if valid for rectification")
         
         // Stereo operations
         .def("computeDepth", [](const rtabmap::StereoCameraModel& self, float disparity) {
@@ -220,8 +229,13 @@ void init_camera_model(py::module &m) {
         }, "Compute disparity from depth", py::arg("depth"))
         
         // Scaling
-        .def("scaled", &rtabmap::StereoCameraModel::scaled,
-             "Get scaled stereo camera model", py::arg("scale"))
+        .def("scale", [](rtabmap::StereoCameraModel& self, double scale) {
+            self.scale(scale);
+        }, "Scale stereo camera model", py::arg("scale"))
+        
+        .def("roi", [](rtabmap::StereoCameraModel& self, const cv::Rect& roi) {
+            self.roi(roi);
+        }, "Apply ROI to stereo camera model", py::arg("roi"))
         
         // String representation
         .def("__str__", [](const rtabmap::StereoCameraModel& self) {
