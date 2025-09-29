@@ -4,6 +4,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/cast.h>
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/utilite/UConversion.h>
@@ -15,9 +16,10 @@ void init_parameters(py::module &m) {
     py::module params = m.def_submodule("Parameters", "RTAB-Map Parameters static methods");
     
     // Static methods for parameter access
-    params.def("getDefaultParameters", &rtabmap::Parameters::getDefaultParameters,
-               "Get all default parameters as a dictionary",
-               py::return_value_policy::reference_internal);
+    params.def("getDefaultParameters", []() -> const rtabmap::ParametersMap& {
+        return rtabmap::Parameters::getDefaultParameters();
+    }, "Get all default parameters as a dictionary",
+       py::return_value_policy::reference);
     params.def("getType", &rtabmap::Parameters::getType,
                "Get parameter type", py::arg("key"));
     params.def("getDescription", &rtabmap::Parameters::getDescription,
@@ -28,14 +30,29 @@ void init_parameters(py::module &m) {
                "Check if parameter is a feature parameter", py::arg("param"));
     
     // Parameter parsing and validation
-    params.def("parseArguments", &rtabmap::Parameters::parseArguments,
-               "Parse command line arguments", py::arg("argc"), py::arg("argv"), py::arg("onlyParameters") = false);
+    params.def("parseArguments", [](const py::list& args, bool onlyParameters = false) -> rtabmap::ParametersMap {
+        std::vector<std::string> arg_strings;
+        std::vector<char*> argv;
+        
+        // Convert Python list to C-style argv
+        for (auto item : args) {
+            arg_strings.push_back(py::cast<std::string>(item));
+        }
+        
+        // Create char* array
+        for (auto& arg : arg_strings) {
+            argv.push_back(const_cast<char*>(arg.c_str()));
+        }
+        
+        return rtabmap::Parameters::parseArguments(static_cast<int>(argv.size()), argv.data(), onlyParameters);
+    }, "Parse command line arguments", py::arg("args"), py::arg("onlyParameters") = false);
     
     // Parameter groups for easier access
     params.def("getDefaultOdometryParameters", &rtabmap::Parameters::getDefaultOdometryParameters,
                "Get default odometry parameters", py::arg("stereo") = false, py::arg("vis") = true, py::arg("icp") = false);
-    params.def("getDefaultParameters", py::overload_cast<const std::string&>(&rtabmap::Parameters::getDefaultParameters),
-               "Get default parameters for a specific group", py::arg("group"));
+    params.def("getDefaultParametersForGroup", [](const std::string& group) -> rtabmap::ParametersMap {
+        return rtabmap::Parameters::getDefaultParameters(group);
+    }, "Get default parameters for a specific group", py::arg("group"));
     
     // Utility functions from UConversion (not Parameters class methods)
     py::module utils = m.def_submodule("Utils", "Utility conversion functions");
