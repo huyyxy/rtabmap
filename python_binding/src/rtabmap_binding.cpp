@@ -11,6 +11,7 @@
 #include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/Statistics.h>
 #include <rtabmap/core/Transform.h>
+#include <rtabmap/core/DBDriver.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;
@@ -24,11 +25,11 @@ void init_rtabmap(py::module &m) {
              "Initialize RTAB-Map with parameters and database",
              py::arg("parameters") = rtabmap::ParametersMap(), 
              py::arg("database_path") = "",
-             py::arg("load_database_parameters") = true)
+             py::arg("load_database_parameters") = false)
         
-        .def("init", py::overload_cast<const rtabmap::ParametersMap&, rtabmap::DBDriver*, bool>(&rtabmap::Rtabmap::init),
-             "Initialize RTAB-Map with parameters and database driver",
-             py::arg("parameters"), py::arg("db_driver"), py::arg("load_database_parameters") = true)
+        .def("init", py::overload_cast<const std::string&, const std::string&, bool>(&rtabmap::Rtabmap::init),
+             "Initialize RTAB-Map with config file and database",
+             py::arg("config_file") = "", py::arg("database_path") = "", py::arg("load_database_parameters") = false)
         
         .def("close", &rtabmap::Rtabmap::close,
              "Close RTAB-Map and save database",
@@ -97,19 +98,16 @@ void init_rtabmap(py::module &m) {
         .def("getStatistics", &rtabmap::Rtabmap::getStatistics,
              "Get current statistics",
              py::return_value_policy::copy)
-        .def("getStatisticsData", &rtabmap::Rtabmap::getStatisticsData,
-             "Get statistics data as dictionary",
-             py::return_value_policy::copy)
         
         // Memory and map access
         .def("getMemory", &rtabmap::Rtabmap::getMemory,
              "Get memory object",
              py::return_value_policy::reference_internal)
-        .def("getOptimizedPoses", &rtabmap::Rtabmap::getOptimizedPoses,
-             "Get optimized poses from graph optimization",
+        .def("getLocalOptimizedPoses", &rtabmap::Rtabmap::getLocalOptimizedPoses,
+             "Get local optimized poses from graph optimization",
              py::return_value_policy::copy)
-        .def("getConstraints", &rtabmap::Rtabmap::getConstraints,
-             "Get graph constraints/links",
+        .def("getLocalConstraints", &rtabmap::Rtabmap::getLocalConstraints,
+             "Get local graph constraints/links",
              py::return_value_policy::copy)
         .def("getMapCorrection", &rtabmap::Rtabmap::getMapCorrection,
              "Get map correction transform",
@@ -119,18 +117,19 @@ void init_rtabmap(py::module &m) {
         .def("computePath", py::overload_cast<int, bool>(&rtabmap::Rtabmap::computePath),
              "Compute path to goal node",
              py::arg("target_node"), py::arg("global_path") = true)
-        .def("computePath", py::overload_cast<const rtabmap::Transform&, bool>(&rtabmap::Rtabmap::computePath),
+        .def("computePath", py::overload_cast<const rtabmap::Transform&, float>(&rtabmap::Rtabmap::computePath),
              "Compute path to goal pose",
-             py::arg("target_pose"), py::arg("global_path") = true)
+             py::arg("target_pose"), py::arg("tolerance") = -1.0f)
         .def("getPath", &rtabmap::Rtabmap::getPath,
              "Get current path",
              py::return_value_policy::copy)
-        .def("clearPath", &rtabmap::Rtabmap::clearPath,
-             "Clear current path")
+        .def("clearPath", [](rtabmap::Rtabmap& self, int status = 0) {
+            self.clearPath(status);
+        }, "Clear current path", py::arg("status") = 0)
         
         // Database operations
-        .def("getMemoryUsed", &rtabmap::Rtabmap::getMemoryUsed,
-             "Get memory usage in bytes")
+        .def("getTotalMemSize", &rtabmap::Rtabmap::getTotalMemSize,
+             "Get total memory size in nodes")
         .def("exportPoses", &rtabmap::Rtabmap::exportPoses,
              "Export poses to file",
              py::arg("file_path"), py::arg("optimized") = true, py::arg("global") = true, py::arg("format") = 0)
@@ -142,9 +141,6 @@ void init_rtabmap(py::module &m) {
         .def("getParameters", &rtabmap::Rtabmap::getParameters,
              "Get current parameters",
              py::return_value_policy::copy)
-        .def("getParameter", &rtabmap::Rtabmap::getParameter,
-             "Get a specific parameter value",
-             py::arg("key"))
         
         // Advanced operations
         .def("generateDOTGraph", &rtabmap::Rtabmap::generateDOTGraph,
@@ -155,23 +151,28 @@ void init_rtabmap(py::module &m) {
              py::arg("neighbor_merged_maps") = std::map<int, int>(), py::arg("landmark_maps") = std::map<int, int>(),
              py::arg("inter_session_maps") = std::map<int, int>())
         
-        .def("getNodesInRadius", py::overload_cast<const rtabmap::Transform&, float, int, int, bool>(&rtabmap::Rtabmap::getNodesInRadius, py::const_),
-             "Get nodes within radius of a pose",
-             py::arg("pose"), py::arg("radius"), py::arg("k") = 0, py::arg("ignore_id") = 0, py::arg("ignore_bad_signatures") = false)
+        .def("getNodesInRadius", [](rtabmap::Rtabmap& self, const rtabmap::Transform& pose, float radius, int k = 0) {
+            return self.getNodesInRadius(pose, radius, k, nullptr);
+        }, "Get nodes within radius of a pose",
+           py::arg("pose"), py::arg("radius"), py::arg("k") = 0)
         
         // Localization mode
-        .def("setLocalizationMode", &rtabmap::Rtabmap::setLocalizationMode,
-             "Set localization mode (true) or mapping mode (false)",
-             py::arg("enabled"))
         .def("isLocalizationMode", [](const rtabmap::Rtabmap& self) -> bool {
-            return self.getParameter("Mem/IncrementalMemory") == "false";
+            const rtabmap::ParametersMap& params = self.getParameters();
+            auto it = params.find("Mem/IncrementalMemory");
+            return it != params.end() && it->second == "false";
         }, "Check if in localization mode")
         
         // Recovery and cleanup
-        .def("cleanupLocalGrids", &rtabmap::Rtabmap::cleanupLocalGrids,
-             "Clean up local grids to save memory",
-             py::arg("poses") = std::map<int, rtabmap::Transform>(),
-             py::arg("radius") = 5.0f, py::arg("cleanup_laser_scan") = true)
+        .def("cleanupLocalGrids", [](rtabmap::Rtabmap& self, 
+                                    const std::map<int, rtabmap::Transform>& mapPoses,
+                                    const cv::Mat& map,
+                                    float xMin, float yMin, float cellSize,
+                                    int cropRadius = 1, bool filterScans = false) -> int {
+            return self.cleanupLocalGrids(mapPoses, map, xMin, yMin, cellSize, cropRadius, filterScans);
+        }, "Clean up local grids to save memory",
+           py::arg("map_poses"), py::arg("map"), py::arg("x_min"), py::arg("y_min"), 
+           py::arg("cell_size"), py::arg("crop_radius") = 1, py::arg("filter_scans") = false)
         
         // Utility methods
         .def("isInitialized", [](const rtabmap::Rtabmap& self) -> bool {
