@@ -157,16 +157,64 @@ def find_opencv_paths():
     
     return include_dirs, library_dirs, libraries
 
+def find_eigen_paths():
+    """Find Eigen installation paths."""
+    include_dirs = []
+    
+    try:
+        # Use pkg-config for Eigen3
+        result = subprocess.run(['pkg-config', '--cflags', 'eigen3'], 
+                              capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            flags = result.stdout.split()
+            for flag in flags:
+                if flag.startswith('-I'):
+                    include_dirs.append(flag[2:])
+    except FileNotFoundError:
+        print("pkg-config not found, using fallback Eigen detection")
+    
+    # Fallback detection
+    if not include_dirs:
+        common_eigen_paths = [
+            '/usr/local/include/eigen3',
+            '/usr/include/eigen3',
+            '/usr/local/include/eigen',
+            '/usr/include/eigen',
+            '/opt/homebrew/include/eigen3',  # macOS Homebrew
+            '/usr/local/Cellar/eigen/*/include/eigen3',  # macOS Homebrew old
+        ]
+        for path_pattern in common_eigen_paths:
+            if '*' in path_pattern:
+                # Handle glob patterns
+                import glob
+                for path in glob.glob(path_pattern):
+                    if Path(path).exists():
+                        include_dirs.append(path)
+                        break
+                if include_dirs:
+                    break
+            else:
+                if Path(path_pattern).exists():
+                    include_dirs.append(path_pattern)
+                    break
+    
+    return include_dirs
+
 # Get paths
 rtabmap_includes, rtabmap_lib_dirs, rtabmap_libs = find_rtabmap_paths()
 opencv_includes, opencv_lib_dirs, opencv_libs = find_opencv_paths()
+eigen_includes = find_eigen_paths()
 
 # Combine all paths
-all_include_dirs = rtabmap_includes + opencv_includes
+all_include_dirs = rtabmap_includes + opencv_includes + eigen_includes
 all_library_dirs = rtabmap_lib_dirs + opencv_lib_dirs
 all_libraries = rtabmap_libs + opencv_libs
 
-print(f"Include directories: {all_include_dirs}")
+print(f"RTAB-Map includes: {rtabmap_includes}")
+print(f"OpenCV includes: {opencv_includes}")
+print(f"Eigen includes: {eigen_includes}")
+print(f"All include directories: {all_include_dirs}")
 print(f"Library directories: {all_library_dirs}")
 print(f"Libraries: {all_libraries}")
 

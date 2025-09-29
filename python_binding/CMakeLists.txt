@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(pybind11 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Find RTAB-Map
 find_package(RTABMap REQUIRED)
@@ -38,6 +39,7 @@ endif()
 # Include directories
 include_directories(${RTABMap_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Source files
 set(SOURCES
@@ -57,6 +59,7 @@ pybind11_add_module(rtabmap_python ${SOURCES})
 target_link_libraries(rtabmap_python PRIVATE 
     ${RTABMap_LIBRARIES}
     ${OpenCV_LIBRARIES}
+    Eigen3::Eigen
 )
 
 # Set properties

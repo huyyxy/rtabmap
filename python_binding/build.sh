@@ -86,6 +86,18 @@ check_dependencies() {
         print_warning "pkg-config not found. Install it for better dependency detection."
     fi
     
+    # Check Eigen3
+    print_status "Checking for Eigen3..."
+    if pkg-config --exists eigen3; then
+        EIGEN_VERSION=$(pkg-config --modversion eigen3)
+        print_status "Found Eigen3 version: $EIGEN_VERSION"
+    elif [ -d "/usr/include/eigen3" ] || [ -d "/usr/local/include/eigen3" ]; then
+        print_status "Found Eigen3 system installation"
+    else
+        print_warning "Eigen3 not found via pkg-config or common paths"
+        print_warning "Install Eigen3: sudo apt install libeigen3-dev"
+    fi
+    
     return 0
 }
 
@@ -94,9 +106,18 @@ install_python_deps() {
     print_status "Installing Python dependencies..."
     
     if [ -f "requirements.txt" ]; then
-        pip3 install -r requirements.txt
+        pip3 install -r requirements.txt --break-system-packages
     else
-        pip3 install numpy>=1.19.0 opencv-python>=4.5.0 pybind11>=2.6.0
+        pip3 install numpy>=1.19.0 opencv-python>=4.5.0 pybind11>=2.6.0 --break-system-packages
+    fi
+    
+    # Check if Eigen3 development package is installed
+    if ! pkg-config --exists eigen3 && ! [ -d "/usr/include/eigen3" ] && ! [ -d "/usr/local/include/eigen3" ]; then
+        print_error "Eigen3 development headers not found!"
+        print_error "Please install Eigen3 development package:"
+        print_error "  Ubuntu/Debian: sudo apt install libeigen3-dev"
+        print_error "  macOS: brew install eigen"
+        return 1
     fi
     
     print_status "Python dependencies installed successfully"
