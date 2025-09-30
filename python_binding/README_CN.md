@@ -1,88 +1,61 @@
 # RTAB-Map Python 绑定
 
-**使用 pybind11 为官方 RTAB-Map C++ 库提供的真实 Python 绑定**
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-BSD-green.svg)](LICENSE)
+[![RTAB-Map](https://img.shields.io/badge/RTAB--Map-0.20%2B-orange.svg)](https://github.com/introlab/rtabmap)
 
-本包为 RTAB-Map（基于实时外观的建图）提供真正的 Python 绑定，这是一个基于增量外观回环检测器的 RGB-D 图优化 SLAM 方法。与模拟实现不同，这些绑定直接与实际的 RTAB-Map C++ 库接口。
+**基于 pybind11 的 RTAB-Map C++ 库官方 Python 绑定**
 
-## 功能特性
+RTAB-Map 是一个基于实时外观的建图（Real-Time Appearance-Based Mapping）的 RGB-D SLAM 库。本 Python 绑定提供了对完整 RTAB-Map C++ 库的直接访问，支持实时 SLAM、回环检测和图优化。
 
-### 核心 SLAM 功能
-- **完整 RGB-D SLAM**：具有回环检测的完整 SLAM 处理
-- **实时性能**：直接 C++ 集成以获得最大性能
-- **图优化**：访问优化的位姿图和约束
-- **内存管理**：实时操作的智能内存管理
-- **回环检测**：鲁棒的外观回环检测
-- **综合统计**：详细的性能和图构建统计
+## ✨ 主要特性
 
-### 传感器支持
-- **RGB-D 相机**：支持深度相机（RealSense、Kinect 等）
-- **立体相机**：具有深度计算的立体视觉
-- **相机标定**：完整的相机模型支持，包括畸变校正
-- **IMU 集成**：惯性测量单元数据融合
-- **GPS 集成**：用于全局定位的 GPS 数据
+- 🚀 **完整 SLAM 功能**：RGB-D SLAM、回环检测、图优化
+- ⚡ **高性能**：直接 C++ 集成，实时处理能力
+- 📷 **多传感器支持**：RGB-D 相机、立体相机、IMU、GPS
+- 🎯 **精确标定**：完整的相机模型和畸变校正
+- 📊 **详细统计**：性能监控和 SLAM 分析
+- 🔧 **灵活配置**：丰富的参数调优选项
 
-### 数据结构
-- **SensorData**：所有传感器输入的统一容器
-- **Transform**：具有完整矩阵运算的 3D 变换
-- **CameraModel**：相机内参和标定参数
-- **Parameters**：综合参数管理系统
-- **Statistics**：性能监控和分析
+## 📦 安装
 
-## 安装
+### 系统要求
 
-### 前置条件
+- Python 3.7+
+- RTAB-Map C++ 库
+- OpenCV 4.5+
+- Eigen3
+- pybind11
 
-1. **RTAB-Map C++ 库**：您必须先安装 RTAB-Map
-   ```bash
-   # 在 Ubuntu/Debian 上
-   sudo apt install ros-*-rtabmap ros-*-rtabmap-ros
-   
-   # 或从源码构建
-   git clone https://github.com/introlab/rtabmap.git
-   cd rtabmap/build
-   cmake ..
-   make -j4
-   sudo make install
-   ```
+### 快速安装
 
-2. **系统依赖**：
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install python3-dev python3-pip cmake pkg-config
-   sudo apt install libopencv-dev libeigen3-dev
-   
-   # macOS
-   brew install python cmake pkg-config opencv eigen
-   ```
+```bash
+# 1. 安装 RTAB-Map C++ 库
+# Ubuntu/Debian
+sudo apt install ros-*-rtabmap ros-*-rtabmap-ros
 
-3. **Python 依赖**：
-   ```bash
-   pip install numpy>=1.19.0 opencv-python>=4.5.0 pybind11>=2.6.0
-   ```
+# macOS
+brew install rtabmap
 
-### 构建和安装
+# 2. 安装 Python 依赖
+pip install numpy opencv-python pybind11
 
-1. **从源码安装**（推荐）：
-   ```bash
-   cd rtabmap/python_binding
-   pip install -r requirements.txt
-   pip install .
-   ```
+# 3. 安装 Python 绑定
+cd rtabmap/python_binding
+pip install .
+```
 
-2. **开发安装**：
-   ```bash
-   pip install -e .  # 可编辑安装
-   pip install -e ".[dev]"  # 包含开发工具
-   ```
+### 开发安装
 
-3. **使用 CMake**（高级）：
-   ```bash
-   mkdir build && cd build
-   cmake ..
-   make -j4
-   ```
+```bash
+# 可编辑安装
+pip install -e .
 
-## 快速开始
+# 包含开发工具
+pip install -e ".[dev]"
+```
+
+## 🚀 快速开始
 
 ### 基础 RGB-D SLAM
 
@@ -91,7 +64,7 @@ import rtabmap_python as rtab
 import numpy as np
 import cv2
 
-# 初始化 RTAB-Map
+# 初始化 SLAM
 slam = rtab.Rtabmap()
 
 # 配置参数
@@ -100,271 +73,481 @@ params[rtab.Param.kRGBDEnabled] = "true"
 params[rtab.Param.kRtabmapTimeThr] = "700"
 params[rtab.Param.kRtabmapLoopThr] = "0.11"
 
-# 使用数据库初始化
+# 初始化
 slam.init(params, "my_map.db")
 
 # 创建相机模型
-camera_model = rtab.CameraModel(
-    fx=525.0, fy=525.0,
-    cx=320.0, cy=240.0
-)
+camera = rtab.CameraModel(525.0, 525.0, 320.0, 240.0)
 
 # 处理 RGB-D 数据
-rgb_image = cv2.imread('rgb.jpg')
-depth_image = cv2.imread('depth.png', cv2.IMREAD_ANYDEPTH)
+rgb = cv2.imread('rgb.jpg')
+depth = cv2.imread('depth.png', cv2.IMREAD_ANYDEPTH)
+pose = rtab.Transform(0, 0, 0, 0, 0, 0)
 
-sensor_data = rtab.SensorData(rgb_image, depth_image, camera_model)
-odometry_pose = rtab.Transform(0, 0, 0, 0, 0, 0)  # x,y,z,roll,pitch,yaw
-
-# 处理帧
-success = slam.process(sensor_data, odometry_pose)
+sensor_data = rtab.SensorData(rgb, depth, camera)
+success = slam.process(sensor_data, pose)
 
 # 获取结果
 stats = slam.getStatistics()
-poses = slam.getOptimizedPoses()
-loop_closure_id = slam.getLoopClosureId()
-
 print(f"处理时间: {stats.getProcessTime():.2f}ms")
-print(f"检测到回环: {loop_closure_id}")
-print(f"位姿数量: {len(poses)}")
+print(f"回环检测: {slam.getLoopClosureId()}")
 
-# 关闭并保存
+# 保存并关闭
 slam.close(database_saved=True)
 ```
 
 ### 使用 NumPy 数组
 
 ```python
-import rtabmap_python as rtab
-import numpy as np
-
-# 初始化 SLAM
-slam = rtab.Rtabmap()
-params = rtab.ParametersMap()
-params[rtab.Param.kRGBDEnabled] = "true"
-slam.init(params)
-
-# 相机模型
-camera_model = rtab.CameraModel(525.0, 525.0, 320.0, 240.0)
-
-# RGB-D 数据作为 numpy 数组
+# 创建模拟数据
 rgb = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
 depth = np.random.randint(500, 5000, (480, 640), dtype=np.uint16)
 
-# 变换
-pose = rtab.Transform(1.0, 0.0, 0.0, 0.0, 0.0, 0.1)
-
-# 使用便捷方法处理
-success = slam.processRGBD(rgb, depth, camera_model, pose)
+# 便捷处理
+success = slam.processRGBD(rgb, depth, camera, pose)
 
 # 获取统计信息
 stats = slam.getStatistics()
-print(f"提取的特征: {stats.getFeaturesExtracted()}")
-print(f"工作内存大小: {stats.getWorkingMemorySize()}")
+print(f"提取特征: {stats.getFeaturesExtracted()}")
+print(f"工作内存: {stats.getWorkingMemorySize()}")
+```
+
+## 📚 核心 API
+
+### Rtabmap 类
+
+主要的 SLAM 处理类。
+
+```python
+# 初始化
+slam = rtab.Rtabmap()
+slam.init(parameters, database_path="")
+
+# 处理数据
+success = slam.process(sensor_data, odometry_pose)
+success = slam.processRGBD(rgb, depth, camera, pose)
+
+# 获取结果
+stats = slam.getStatistics()
+poses = slam.getLocalOptimizedPoses()
+constraints = slam.getLocalConstraints()
+
+# 状态查询
+process_time = slam.getLastProcessTime()
+loop_closure_id = slam.getLoopClosureId()
+wm_size = slam.getWMSize()
+
+# 关闭
+slam.close(database_saved=True)
+```
+
+### SensorData 类
+
+传感器数据容器。
+
+```python
+# 创建传感器数据
+sensor_data = rtab.SensorData(rgb, depth, camera, id=0, stamp=0.0)
+
+# 数据访问
+rgb_array = sensor_data.imageRaw()
+depth_array = sensor_data.depthRaw()
+camera_models = sensor_data.cameraModels()
+
+# 数据验证
+is_valid = sensor_data.isValid()
+has_image = sensor_data.hasImage()
+has_depth = sensor_data.hasDepth()
+```
+
+### Transform 类
+
+3D 变换操作。
+
+```python
+# 创建变换
+transform = rtab.Transform(x, y, z, roll, pitch, yaw)
+transform = rtab.Transform(matrix_4x4)
+
+# 变换运算
+inverse = transform.inverse()
+combined = transform1 * transform2
+distance = transform1.getDistance(transform2)
+
+# 位置和旋转
+x, y, z = transform.x(), transform.y(), transform.z()
+roll, pitch, yaw = transform.roll(), transform.pitch(), transform.yaw()
+```
+
+### CameraModel 类
+
+相机标定和投影。
+
+```python
+# 创建相机模型
+camera = rtab.CameraModel(fx, fy, cx, cy, image_size=rtab.Size(640, 480))
+
+# 投影运算
+x, y, z = camera.project(u, v, depth)  # 2D -> 3D
+u, v = camera.reproject(x, y, z)       # 3D -> 2D
+
+# 图像校正
+rectified = camera.rectifyImage(raw_image)
+```
+
+### Statistics 类
+
+性能统计和分析。
+
+```python
+# 获取统计信息
+stats = slam.getStatistics()
+
+# 基础统计
+process_time = stats.getProcessTime()
+wm_size = stats.getWorkingMemorySize()
+features = stats.getFeaturesExtracted()
+
+# 性能摘要
+summary = stats.getPerformanceSummary()
+
+# 字典式访问
+value = stats["Process/time/ms"]
+keys = stats.keys()
+```
+
+## ⚙️ 参数配置
+
+### 核心参数
+
+```python
+params = rtab.ParametersMap()
+
+# SLAM 参数
+params[rtab.Param.kRtabmapTimeThr] = "700"      # 时间阈值 (ms)
+params[rtab.Param.kRtabmapLoopThr] = "0.11"     # 回环检测阈值
+params[rtab.Param.kRtabmapMaxRetrieved] = "2"   # 最大检索节点
+
+# RGB-D 参数
+params[rtab.Param.kRGBDEnabled] = "true"        # 启用 RGB-D
+params[rtab.Param.kRGBDLinearUpdate] = "0.1"    # 线性更新阈值
+params[rtab.Param.kRGBDAngularUpdate] = "0.1"   # 角度更新阈值
+
+# 特征检测参数
+params[rtab.Param.kKpMaxFeatures] = "400"       # 最大特征数
+params[rtab.Param.kKpDetectorStrategy] = "6"    # 检测器策略
+params[rtab.Param.kKpNndrRatio] = "0.6"         # NNDR 比率
+
+# 内存管理参数
+params[rtab.Param.kMemRehearsalSimilarity] = "0.6"  # 排练相似度
+params[rtab.Param.kMemImageKept] = "true"           # 保留图像
 ```
 
 ### 参数管理
 
 ```python
-import rtabmap_python as rtab
-
-# 获取所有默认参数
+# 获取默认参数
 default_params = rtab.Parameters.getDefaultParameters()
-print(f"总参数数量: {len(default_params)}")
 
-# 创建参数映射
-params = rtab.ParametersMap()
+# 获取特定组参数
+rgbd_params = rtab.Parameters.getDefaultParametersForGroup("RGBD")
 
-# 设置 RGB-D SLAM 参数
-params[rtab.Param.kRGBDEnabled] = "true"
-params[rtab.Param.kRGBDLinearUpdate] = "0.1"
-params[rtab.Param.kRGBDAngularUpdate] = "0.1"
-
-# 设置特征检测参数
-params[rtab.Param.kKpMaxFeatures] = "400"
-params[rtab.Param.kKpDetectorStrategy] = "6"  # GFTT/BRIEF
-
-# 设置回环检测参数
-params[rtab.Param.kRtabmapLoopThr] = "0.11"
-params[rtab.Param.kRtabmapMaxRetrieved] = "2"
-
-# 设置内存管理
-params[rtab.Param.kMemRehearsalSimilarity] = "0.6"
-
-# 验证参数
+# 参数验证
 validated_params = rtab.Parameters.parse(params)
-print("参数验证成功！")
 ```
 
-## API 参考
+## 📖 使用示例
 
-### 核心类
-
-#### Rtabmap
-主要的 SLAM 处理类。
+### 完整 SLAM 工作流程
 
 ```python
-slam = rtab.Rtabmap()
-slam.init(parameters, database_path)
-success = slam.process(sensor_data, odometry_pose)
-stats = slam.getStatistics()
-poses = slam.getOptimizedPoses()
-slam.close()
+import rtabmap_python as rtab
+import numpy as np
+import cv2
+
+def run_slam_example():
+    # 初始化
+    slam = rtab.Rtabmap()
+    params = rtab.ParametersMap()
+    params[rtab.Param.kRGBDEnabled] = "true"
+    params[rtab.Param.kRtabmapTimeThr] = "700"
+    slam.init(params, "example_map.db")
+    
+    # 相机模型
+    camera = rtab.CameraModel(525.0, 525.0, 320.0, 240.0)
+    
+    # 处理循环
+    for i in range(100):
+        # 模拟数据
+        rgb = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
+        depth = np.random.randint(500, 5000, (480, 640), dtype=np.uint16)
+        pose = rtab.Transform(i*0.1, 0, 0, 0, 0, 0)
+        
+        # 处理
+        sensor_data = rtab.SensorData.create(rgb, depth, camera, id=i)
+        success = slam.process(sensor_data, pose)
+        
+        # 统计
+        stats = slam.getStatistics()
+        print(f"帧 {i}: 时间 {stats.getProcessTime():.1f}ms, "
+              f"特征 {stats.getFeaturesExtracted()}, "
+              f"内存 {stats.getWorkingMemorySize()}")
+    
+    # 结果
+    poses = slam.getLocalOptimizedPoses()
+    constraints = slam.getLocalConstraints()
+    print(f"总位姿: {len(poses)}, 总约束: {len(constraints)}")
+    
+    # 导出
+    slam.exportPoses("poses.txt", optimized=True, global=True)
+    slam.close(database_saved=True)
+
+if __name__ == "__main__":
+    run_slam_example()
 ```
 
-#### SensorData
-传感器输入容器。
+### 相机标定和投影
 
 ```python
-# RGB-D 构造函数
-sensor_data = rtab.SensorData(rgb_image, depth_image, camera_model)
-
-# 从 numpy 数组创建
-sensor_data = rtab.SensorData.create(rgb_array, depth_array, camera_model)
-
-# 访问数据
-rgb = sensor_data.imageRaw()
-depth = sensor_data.depthRaw()
+def camera_projection_example():
+    # 创建相机模型
+    camera = rtab.CameraModel(
+        name="my_camera",
+        fx=525.0, fy=525.0,
+        cx=320.0, cy=240.0,
+        image_size=rtab.Size(640, 480)
+    )
+    
+    # 2D 到 3D 投影
+    u, v = 320, 240  # 图像中心
+    depth = 1000.0   # 深度值 (mm)
+    x, y, z = camera.project(u, v, depth)
+    print(f"像素 ({u}, {v}) 深度 {depth} -> 3D点 ({x:.2f}, {y:.2f}, {z:.2f})")
+    
+    # 3D 到 2D 重投影
+    u_proj, v_proj = camera.reproject(x, y, z)
+    print(f"3D点 ({x:.2f}, {y:.2f}, {z:.2f}) -> 像素 ({u_proj:.2f}, {v_proj:.2f})")
+    
+    # 图像校正
+    raw_image = cv2.imread("raw_image.jpg")
+    rectified_image = camera.rectifyImage(raw_image, cv2.INTER_LINEAR)
+    cv2.imwrite("rectified_image.jpg", rectified_image)
 ```
 
-#### Transform
-3D 变换矩阵。
+### 变换操作
 
 ```python
-# 从位置和欧拉角
-transform = rtab.Transform(x=1.0, y=2.0, z=3.0, roll=0.1, pitch=0.2, yaw=0.3)
-
-# 从 4x4 矩阵
-transform = rtab.Transform.fromEigen4d(matrix)
-
-# 运算
-inverse = transform.inverse()
-combined = transform1 * transform2
-distance = transform1.getDistance(transform2)
+def transform_example():
+    # 创建变换
+    transform1 = rtab.Transform(1.0, 2.0, 3.0, 0.1, 0.2, 0.3)
+    transform2 = rtab.Transform(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)
+    
+    # 变换运算
+    combined = transform1 * transform2
+    inverse = transform1.inverse()
+    distance = transform1.getDistance(transform2)
+    
+    print(f"组合变换: {combined}")
+    print(f"逆变换: {inverse}")
+    print(f"距离: {distance:.3f}")
+    
+    # 插值
+    t = 0.5
+    interpolated = transform1.interpolate(t, transform2)
+    print(f"插值变换: {interpolated}")
 ```
 
-#### CameraModel
-相机标定参数。
+### 立体相机模型
 
 ```python
-# 基础构造函数
-camera = rtab.CameraModel(fx=525, fy=525, cx=320, cy=240)
-
-# 从标定矩阵
-camera = rtab.CameraModel.fromEigen(K_matrix, D_vector, image_size)
-
-# 投影运算
-points_2d = camera.project(points_3d)
-points_3d = camera.reproject(points_2d, depths)
+def stereo_camera_example():
+    # 创建立体相机模型
+    stereo_camera = rtab.StereoCameraModel(
+        name="stereo_camera",
+        fx=525.0, fy=525.0,
+        cx=320.0, cy=240.0,
+        baseline=0.1,  # 10cm 基线
+        image_size=rtab.Size(640, 480)
+    )
+    
+    # 访问左右相机
+    left_camera = stereo_camera.left()
+    right_camera = stereo_camera.right()
+    print(f"基线: {stereo_camera.baseline():.3f}m")
+    
+    # 立体运算
+    disparity = 50.0
+    depth = stereo_camera.computeDepth(disparity)
+    print(f"视差 {disparity} -> 深度 {depth:.3f}m")
+    
+    depth = 2.0
+    disparity = stereo_camera.computeDisparity(depth)
+    print(f"深度 {depth}m -> 视差 {disparity:.2f}")
 ```
 
-### 配置
+## 🔧 性能优化
 
-#### 关键参数
+### 参数调优建议
+
+1. **实时性能优化**
+   ```python
+   params[rtab.Param.kRtabmapTimeThr] = "500"      # 降低时间阈值
+   params[rtab.Param.kKpMaxFeatures] = "200"       # 减少特征数
+   params[rtab.Param.kRGBDLinearUpdate] = "0.2"    # 增加更新阈值
+   ```
+
+2. **精度优化**
+   ```python
+   params[rtab.Param.kRtabmapLoopThr] = "0.08"     # 降低回环阈值
+   params[rtab.Param.kKpMaxFeatures] = "800"       # 增加特征数
+   params[rtab.Param.kKpNndrRatio] = "0.7"         # 提高匹配质量
+   ```
+
+3. **内存管理**
+   ```python
+   params[rtab.Param.kMemRehearsalSimilarity] = "0.5"  # 降低相似度阈值
+   params[rtab.Param.kMemImageKept] = "false"          # 不保留图像
+   ```
+
+### 监控和调试
 
 ```python
-# 核心 RTAB-Map 参数
-rtab.Param.kRtabmapTimeThr          # 时间阈值 (ms)
-rtab.Param.kRtabmapLoopThr          # 回环检测阈值
-rtab.Param.kRtabmapMaxRetrieved     # 最大检索节点数
-
-# RGB-D SLAM 参数
-rtab.Param.kRGBDEnabled             # 启用 RGB-D 模式
-rtab.Param.kRGBDLinearUpdate        # 线性更新阈值 (m)
-rtab.Param.kRGBDAngularUpdate       # 角度更新阈值 (rad)
-
-# 特征检测参数
-rtab.Param.kKpMaxFeatures           # 最大特征数
-rtab.Param.kKpDetectorStrategy      # 特征检测器类型
-
-# 内存管理参数
-rtab.Param.kMemRehearsalSimilarity  # 排练相似度阈值
+def monitor_performance(slam):
+    stats = slam.getStatistics()
+    
+    # 性能指标
+    print(f"处理时间: {stats.getProcessTime():.2f}ms")
+    print(f"工作内存: {stats.getWorkingMemorySize()}")
+    print(f"提取特征: {stats.getFeaturesExtracted()}")
+    print(f"匹配特征: {stats.getFeaturesMatched()}")
+    print(f"内点数: {stats.getInliers()}")
+    
+    # 回环检测
+    loop_id = slam.getLoopClosureId()
+    if loop_id > 0:
+        print(f"检测到回环: {loop_id}")
+    
+    # 内存使用
+    memory = slam.getMemory()
+    db_memory = memory.getDatabaseMemoryUsed()
+    print(f"数据库内存: {db_memory / 1024 / 1024:.2f} MB")
 ```
 
-## 示例
-
-`examples/` 目录包含综合示例：
-
-- **`basic_slam_example.py`**：完整的 RGB-D SLAM 工作流程
-- **`camera_integration_example.py`**：真实相机集成
-- **`parameter_tuning_example.py`**：参数优化
-- **`localization_example.py`**：定位模式使用
-
-## 性能优化建议
-
-1. **参数调优**：根据您的环境调整参数
-   - 为实时约束增加 `TimeThr`
-   - 为更快处理减少 `MaxFeatures`
-   - 调整 `LoopThr` 以控制检测灵敏度
-
-2. **内存管理**：监控内存使用
-   - 使用 `getMemoryUsed()` 跟踪内存
-   - 根据可用 RAM 调整 `STMSize`
-   - 为建图启用 `IncrementalMemory`
-
-3. **相机标定**：正确的标定至关重要
-   - 使用高质量的标定数据
-   - 包含畸变参数
-   - 如需要验证校正
-
-## 故障排除
+## 🐛 故障排除
 
 ### 常见问题
 
-**导入错误**：`ImportError: No module named 'rtabmap_python'`
+**1. 导入错误**
 ```bash
-# 确保 RTAB-Map C++ 库已安装
+ImportError: No module named 'rtabmap_python'
+```
+解决方案：
+```bash
+# 检查 RTAB-Map 安装
 pkg-config --exists rtabmap && echo "找到 RTAB-Map" || echo "未找到 RTAB-Map"
 
-# 重新安装绑定
+# 重新安装
 pip install --force-reinstall rtabmap-python
 ```
 
-**构建错误**：`fatal error: rtabmap/core/Rtabmap.h: No such file`
+**2. 构建错误**
 ```bash
-# 安装 RTAB-Map 开发头文件
-sudo apt install librtabmap-dev  # Ubuntu/Debian
+fatal error: rtabmap/core/Rtabmap.h: No such file
+```
+解决方案：
+```bash
+# Ubuntu/Debian
+sudo apt install librtabmap-dev
+
 # 或从源码构建 RTAB-Map
 ```
 
-**运行时错误**：`Segmentation fault`
-- 确保 RTAB-Map 库版本与绑定匹配
+**3. 运行时错误**
+```bash
+Segmentation fault
+```
+解决方案：
+- 确保 RTAB-Map 库版本匹配
 - 检查相机模型有效性
 - 验证传感器数据完整性
 
-**性能问题**：
+**4. 性能问题**
+解决方案：
 - 减少 `MaxFeatures` 参数
-- 为实时操作增加 `TimeThr`
-- 使用 `getMemoryUsed()` 监控内存使用
+- 增加 `TimeThr` 参数
+- 监控内存使用情况
 
-## 与模拟实现的区别
+### 调试技巧
 
-这是一个**真实实现**，具有以下特点：
+```python
+# 启用详细日志
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
-✅ **直接 C++ 集成**：与实际 RTAB-Map C++ 库接口  
-✅ **完整 SLAM 功能**：具有所有功能的完整 RGB-D SLAM  
-✅ **真实性能**：生产就绪的性能特征  
-✅ **综合 API**：访问所有 RTAB-Map 功能  
-✅ **真实回环检测**：实际的外观回环检测  
-✅ **图优化**：真实的位姿图优化  
+# 检查数据有效性
+def validate_sensor_data(sensor_data):
+    if not sensor_data.isValid():
+        print("传感器数据无效")
+        return False
+    
+    if not sensor_data.hasImage():
+        print("缺少 RGB 图像")
+        return False
+    
+    if not sensor_data.hasDepth():
+        print("缺少深度数据")
+        return False
+    
+    return True
 
-与模拟 SLAM 行为的模拟实现不同。
+# 检查相机模型
+def validate_camera_model(camera):
+    if not camera.isValidForProjection():
+        print("相机模型投影无效")
+        return False
+    
+    if camera.imageWidth() <= 0 or camera.imageHeight() <= 0:
+        print("图像尺寸无效")
+        return False
+    
+    return True
+```
 
-## 贡献
+## 📁 项目结构
+
+```
+python_binding/
+├── src/                    # 源代码
+├── examples/               # 示例代码
+├── requirements.txt        # Python 依赖
+├── setup.py               # 安装脚本
+├── CMakeLists.txt         # CMake 配置
+└── README_CN.md          # 中文文档
+```
+
+## 🤝 贡献
+
+欢迎贡献代码！请遵循以下步骤：
 
 1. Fork 仓库
-2. 创建功能分支（`git checkout -b feature/amazing-feature`）
-3. 提交更改（`git commit -m 'Add amazing feature'`）
-4. 推送到分支（`git push origin feature/amazing-feature`）
-5. 打开 Pull Request
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
 
-## 许可证
+## 📄 许可证
 
-本项目采用与 RTAB-Map 相同的许可证（BSD 许可证）。
+本项目采用 BSD 许可证，与 RTAB-Map 保持一致。
 
-## 引用
+## 📚 参考资料
 
-如果您在研究中使用这些绑定，请引用原始 RTAB-Map 论文：
+- [RTAB-Map 官网](https://github.com/introlab/rtabmap)
+- [RTAB-Map 文档](http://introlab.github.io/rtabmap)
+- [pybind11 文档](https://pybind11.readthedocs.io/)
+
+## 📖 引用
+
+如果您在研究中使用本绑定，请引用原始 RTAB-Map 论文：
 
 ```bibtex
 @article{labbe2019rtabmap,
@@ -379,8 +562,12 @@ sudo apt install librtabmap-dev  # Ubuntu/Debian
 }
 ```
 
-## 联系方式
+## 📞 联系方式
 
-- **问题反馈**：[GitHub Issues](https://github.com/introlab/rtabmap/issues)
-- **文档**：[RTAB-Map Wiki](http://introlab.github.io/rtabmap)
-- **原始项目**：[RTAB-Map](https://github.com/introlab/rtabmap)
+- **问题反馈**: [GitHub Issues](https://github.com/introlab/rtabmap/issues)
+- **文档**: [RTAB-Map Wiki](http://introlab.github.io/rtabmap)
+- **原始项目**: [RTAB-Map](https://github.com/introlab/rtabmap)
+
+---
+
+**注意**: 这是一个真实的 RTAB-Map C++ 库绑定，提供完整的 SLAM 功能，与模拟实现不同。
