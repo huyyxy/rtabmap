@@ -409,7 +409,8 @@ ext_modules = [
 
 setup(
     name="rtabmap-python",
-    version="0.23.1",
+    # version="0.23.1",
+    version="0.21.4",
     author="RTAB-Map Python Bindings",
     author_email="",
     url="https://github.com/introlab/rtabmap",
