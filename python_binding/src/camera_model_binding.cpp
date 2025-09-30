@@ -7,8 +7,8 @@
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
 
-#include <rtabmap/core/CameraModel.h>
-#include <rtabmap/core/StereoCameraModel.h>
+#include <rtabmap-0.21/rtabmap/core/CameraModel.h>
+#include <rtabmap-0.21/rtabmap/core/StereoCameraModel.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;

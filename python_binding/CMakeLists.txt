@@ -39,6 +39,7 @@ endif()
 
 # Include directories
 include_directories(${RTABMap_INCLUDE_DIRS})
+include_directories(/usr/local/Cellar/rtabmap/0.21.4_10/include/rtabmap-0.21)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${PCL_INCLUDE_DIRS})

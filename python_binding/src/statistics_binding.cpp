@@ -5,7 +5,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <rtabmap/core/Statistics.h>
+#include <rtabmap-0.21/rtabmap/core/Statistics.h>
 
 namespace py = pybind11;
 

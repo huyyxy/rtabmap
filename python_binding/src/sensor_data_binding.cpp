@@ -6,13 +6,13 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include <rtabmap/core/SensorData.h>
-#include <rtabmap/core/CameraModel.h>
-#include <rtabmap/core/StereoCameraModel.h>
-#include <rtabmap/core/LaserScan.h>
-#include <rtabmap/core/EnvSensor.h>
-#include <rtabmap/core/IMU.h>
-#include <rtabmap/core/GPS.h>
+#include <rtabmap-0.21/rtabmap/core/SensorData.h>
+#include <rtabmap-0.21/rtabmap/core/CameraModel.h>
+#include <rtabmap-0.21/rtabmap/core/StereoCameraModel.h>
+#include <rtabmap-0.21/rtabmap/core/LaserScan.h>
+#include <rtabmap-0.21/rtabmap/core/EnvSensor.h>
+#include <rtabmap-0.21/rtabmap/core/IMU.h>
+#include <rtabmap-0.21/rtabmap/core/GPS.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;

@@ -7,7 +7,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
 
-#include <rtabmap/core/Transform.h>
+#include <rtabmap-0.21/rtabmap/core/Transform.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;

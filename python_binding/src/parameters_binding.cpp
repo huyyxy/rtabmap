@@ -7,8 +7,8 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/cast.h>
 
-#include <rtabmap/core/Parameters.h>
-#include <rtabmap/utilite/UConversion.h>
+#include <rtabmap-0.21/rtabmap/core/Parameters.h>
+#include <rtabmap-0.21/rtabmap/utilite/UConversion.h>
 
 namespace py = pybind11;
 
@@ -102,7 +102,6 @@ void init_parameters(py::module &m) {
     param.attr("kRGBDOptimizeMaxError") = rtabmap::Parameters::kRGBDOptimizeMaxError();
     param.attr("kRGBDStartAtOrigin") = rtabmap::Parameters::kRGBDStartAtOrigin();
     param.attr("kRGBDGoalReachedRadius") = rtabmap::Parameters::kRGBDGoalReachedRadius();
-    param.attr("kRGBDForceOdom3DoF") = rtabmap::Parameters::kRGBDForceOdom3DoF();
     
     // Feature detection parameters
     param.attr("kKpMaxFeatures") = rtabmap::Parameters::kKpMaxFeatures();

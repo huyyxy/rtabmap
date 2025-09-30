@@ -6,13 +6,14 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
-#include <rtabmap/core/Rtabmap.h>
-#include <rtabmap/core/Parameters.h>
-#include <rtabmap/core/SensorData.h>
-#include <rtabmap/core/Statistics.h>
-#include <rtabmap/core/Transform.h>
-#include <rtabmap/core/DBDriver.h>
-#include <rtabmap/core/Memory.h>
+#include <rtabmap-0.21/rtabmap/core/Rtabmap.h>
+#include <rtabmap-0.21/rtabmap/core/Parameters.h>
+#include <rtabmap-0.21/rtabmap/core/SensorData.h>
+#include <rtabmap-0.21/rtabmap/core/Statistics.h>
+#include <rtabmap-0.21/rtabmap/core/Transform.h>
+#include <rtabmap-0.21/rtabmap/core/DBDriver.h>
+#include <rtabmap-0.21/rtabmap/core/Memory.h>
+#include <rtabmap-0.21/rtabmap/core/Version.h>
 #include <opencv2/opencv.hpp>
 
 namespace py = pybind11;
@@ -177,7 +178,7 @@ void init_rtabmap(py::module &m) {
         }, "Check if RTAB-Map is initialized")
         
         .def("getVersion", [](const rtabmap::Rtabmap& self) -> std::string {
-            return "0.23.1"; // RTAB-Map version
+            return RTABMAP_VERSION; // RTAB-Map version from library
         }, "Get RTAB-Map version")
         
         // String representation

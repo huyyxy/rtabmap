@@ -10,6 +10,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
 #include <opencv2/opencv.hpp>
+#include <rtabmap-0.21/rtabmap/core/Version.h>
 
 // Forward declarations for binding functions
 void init_rtabmap(pybind11::module &);
@@ -91,8 +92,8 @@ PYBIND11_MODULE(rtabmap_python, m) {
     init_rtabmap(m);
     
     // Module-level constants
-    m.attr("__version__") = "0.23.1";
-    m.attr("RTABMAP_MAJOR_VERSION") = 0;
-    m.attr("RTABMAP_MINOR_VERSION") = 23;
-    m.attr("RTABMAP_PATCH_VERSION") = 1;
+    m.attr("__version__") = RTABMAP_VERSION;
+    m.attr("RTABMAP_MAJOR_VERSION") = RTABMAP_VERSION_MAJOR;
+    m.attr("RTABMAP_MINOR_VERSION") = RTABMAP_VERSION_MINOR;
+    m.attr("RTABMAP_PATCH_VERSION") = RTABMAP_VERSION_PATCH;
 }
